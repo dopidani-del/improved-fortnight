@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Label Stiker Makanan Pasien - Instalasi Gizi</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',sans-serif;background:#eef2f7;color:#1f2937}
+  header{background:#0f766e;color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
+  header h1{margin:0;font-size:18px}
+  .wrap{display:flex;gap:20px;padding:20px;max-width:1400px;margin:0 auto}
+  .panel{flex:1;min-width:320px;background:#fff;border-radius:12px;padding:18px;box-shadow:0 2px 8px #0001}
+  .panel h2{margin:0 0 12px;font-size:16px;color:#0f766e;border-bottom:2px solid #0f766e;padding-bottom:6px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{border:1px solid #d1d5db;padding:6px}
+  th{background:#f3f4f6;text-align:left}
+  input,select{width:100%;border:1px solid #d1d5db;border-radius:6px;padding:5px;font-size:13px}
+  .btn{background:#0f766e;color:#fff;border:0;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;margin-right:6px}
+  .btn.sec{background:#6b7280}
+  .btn.dan{background:#dc2626}
+  .toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .preview{flex:1.3}
+  .sheet{background:#fff;padding:10mm;box-shadow:0 2px 8px #0001}
+  .stiker{
+    width:100mm;height:55mm;border:1px dashed #9ca3af;
+    padding:4mm 5mm;font-family:'Times New Roman',serif;font-size:11pt;
+    page-break-inside:avoid;position:relative;overflow:hidden;
+    display:flex;flex-direction:column;justify-content:space-between;
+  }
+  .stiker .kop{display:flex;justify-content:space-between;align-items:flex-start}
+  .stiker .kop .kanan{text-align:right;font-size:10pt;font-weight:bold;line-height:1.2}
+  .stiker .data{font-weight:bold;line-height:1.5}
+  .stiker .data td{border:0;padding:1px 4px 1px 0;vertical-align:top}
+  .stiker .data td:first-child{width:90px}
+  .stiker .footer{text-align:center;font-size:10pt;line-height:1.35;margin-top:2mm}
+  @media print{
+    body{background:#fff}
+    header,.panel,.toolbar,.no-print{display:none!important}
+    .wrap{padding:0;max-width:none}
+    .preview{flex:none;width:100%}
+    .sheet{padding:0;box-shadow:none}
+    .stiker{border:0;page-break-inside:avoid;margin:2mm}
+    @page{size:A4;margin:10mm}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏥 Label Stiker Makanan Pasien</h1>
+  <span id="tanggal"></span>
+</header>
+
+<div class="wrap">
+  <!-- INPUT -->
+  <div class="panel no-print">
+    <h2>📋 Data Pasien</h2>
+    <table id="tbl">
+      <thead>
+        <tr><th>No RM</th><th>Nama</th><th>Tgl Lahir</th><th>Ruangan</th><th>Diit</th><th></th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="toolbar">
+      <button class="btn" onclick="tambah()">➕ Tambah Baris</button>
+      <button class="btn sec" onclick="contoh()">📝 Isi Contoh</button>
+      <button class="btn sec" onclick="hapusSemua()">🗑 Hapus Semua</button>
+      <button class="btn sec" onclick="exportCSV()">⬇ CSV</button>
+      <button class="btn sec" onclick="document.getElementById('imp').click()">⬆ Import CSV</button>
+      <input type="file" id="imp" accept=".csv" style="display:none" onchange="importCSV(event)">
+    </div>
+    <hr>
+    <h2>⚙ Pengaturan</h2>
+    <label>Jumlah stiker per pasien: <input type="number" id="qty" value="1" min="1" max="10" style="width:60px"></label>
+    <p style="font-size:12px;color:#6b7280;margin-top:8px">💡 Klik <b>Print</b> untuk mencetak. Setiap stiker ukuran 100×55 mm (cocok untuk label Avery/Lembar stiker A4).</p>
+    <button class="btn" style="margin-top:10px;font-size:15px;padding:12px 20px" onclick="window.print()">🖨 PRINT STIKER</button>
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="panel preview">
+    <h2 class="no-print">👁 Preview Stiker</h2>
+    <div class="sheet" id="sheet"></div>
+  </div>
+</div>
+
+<script>
+document.getElementById('tanggal').textContent = new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+function tambah(data={}){
+  const tb=document.querySelector('#tbl tbody');
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td><input value="${data.rm||''}" oninput="render()"></td>
+    <td><input value="${data.nama||''}" oninput="render()"></td>
+    <td><input value="${data.tgl||''}" oninput="render()"></td>
+    <td><input value="${data.ruang||''}" oninput="render()"></td>
+    <td><input value="${data.diit||''}" oninput="render()"></td>
+    <td><button class="btn dan" onclick="this.closest('tr').remove();render()">✕</button></td>`;
+  tb.appendChild(tr);
+  render();
+}
+function contoh(){
+  document.querySelector('#tbl tbody').innerHTML='';
+  [
+    {rm:'001234',nama:'Budi Santoso',tgl:'12/05/1965',ruang:'Mawar',diit:'Makanan Biasa'},
+    {rm:'001235',nama:'Siti Aminah',tgl:'03/08/1972',ruang:'Melati',diit:'Lunak'},
+    {rm:'001236',nama:'Ahmad Rizki',tgl:'20/11/1980',ruang:'Anggrek',diit:'Rendah Garam'},
+  ].forEach(d=>tambah(d));
+}
+function hapusSemua(){if(confirm('Hapus semua data?')){document.querySelector('#tbl tbody').innerHTML='';render();}}
+
+function render(){
+  const rows=document.querySelectorAll('#tbl tbody tr');
+  const sheet=document.getElementById('sheet');
+  const qty=parseInt(document.getElementById('qty').value)||1;
+  sheet.innerHTML='';
+  rows.forEach(tr=>{
+    const [rm,nama,tgl,ruang,diit]=Array.from(tr.querySelectorAll('input')).map(i=>i.value||'-');
+    for(let i=0;i<qty;i++){
+      const s=document.createElement('div');
+      s.className='stiker';
+      s.innerHTML=`
+        <div class="kop">
+          <div></div>
+          <div class="kanan">Instalasi Gizi<br>RSU SARASWATI<br>WISENA</div>
+        </div>
+        <table class="data">
+          <tr><td>Nomor RM</td><td>: <b>${rm}</b></td></tr>
+          <tr><td>Nama</td><td>: <b>${nama}</b></td></tr>
+          <tr><td>Tgl Lahir</td><td>: <b>${tgl}</b></td></tr>
+          <tr><td>Ruangan</td><td>: <b>${ruang}</b></td></tr>
+          <tr><td>Diit</td><td>: <b>${diit}</b></td></tr>
+        </table>
+        <div class="footer">
+          <b>Pasien yang kami hormati</b><br>
+          Di mohon makanan ini di konsumsi kurang dari 1 jam.<br>
+          Peralatan makan kotor akan diambil setelah satu jam oleh petugas.<br>
+          Terima Kasih, Semoga lekas sembuh
+        </div>`;
+      sheet.appendChild(s);
+    }
+  });
+}
+document.getElementById('qty').oninput=render;
+
+function exportCSV(){
+  const rows=Array.from(document.querySelectorAll('#tbl tbody tr')).map(tr=>
+    Array.from(tr.querySelectorAll('input')).map(i=>`"${i.value}"`).join(','));
+  const csv='No RM,Nama,Tgl Lahir,Ruangan,Diit\n'+rows.join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='data-pasien.csv';a.click();
+}
+function importCSV(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    const lines=r.result.split(/\r?\n/).slice(1).filter(l=>l.trim());
+    document.querySelector('#tbl tbody').innerHTML='';
+    lines.forEach(l=>{
+      const m=l.match(/"([^"]*)"/g)||[];
+      tambah({rm:m[0]?.slice(1,-1),nama:m[1]?.slice(1,-1),tgl:m[2]?.slice(1,-1),ruang:m[3]?.slice(1,-1),diit:m[4]?.slice(1,-1)});
+    });
+  };
+  r.readAsText(f);
+}
+
+// init
+contoh();
+</script>
+</body>
+</html>
